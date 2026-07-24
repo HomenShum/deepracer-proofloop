@@ -1,0 +1,21 @@
+[
+  {
+    "lap_time": 18.4,
+    "passed": true,
+    "failures": [],
+    "rho_speed": 1.0,
+    "rho_steps": -1.0,
+    "genome_policy": {
+      "lookahead": 2.8794,
+      "speed_scale": 0.9544,
+      "lateral_bias": 0.2974,
+      "curve_caution": 0.1729,
+      "steer_gain": 1.4797
+    },
+    "model": "z-ai/glm-5.2",
+    "code": "import math\n\ndef reward_function(params):\n    if params.get('is_offtrack') or not params.get('all_wheels_on_track'):\n        return 1e-3\n\n    progress = params['progress']\n    steps = params['steps']\n    speed = params['speed']\n    steering = params['steering_angle']\n    distance_from_center = params['distance_from_center']\n    track_width = params['track_width']\n    heading = params['heading']\n    waypoints = params['waypoints']\n    closest_waypoints = params['closest_waypoints']\n\n    # Base time penalty: every step costs (prevents step farming)\n    reward = -1.0\n\n    # Centerline keeping (zero-centered, small)\n    norm_dist = distance_from_center / (track_width * 0.5)\n    reward -= 0.5 * norm_dist * norm_dist\n\n    # Steering smoothness (zero-centered, small)\n    reward -= 0.1 * min(abs(steering) / 30.0, 1.0)\n\n    # Speed incentive (capped positive, but net per-step stays negative)\n    reward += 0.3 * (speed / 4.0)\n\n    # Heading alignment with track direction\n    prev_point = waypoints[closest_waypoints[0]]\n    next_point = waypoints[closest_waypoints[1]]\n    track_direction = math.degrees(\n        math.atan2(next_point[1] - prev_point[1], next_point[0] - prev_point[0])\n    )\n    direction_diff = abs(track_direction - heading)\n    if direction_diff > 180:\n        direction_diff = 360 - direction_diff\n    reward -= 0.3 * direction_diff / 180.0\n\n    # Finish bonus encodes time directly:\n    #   flat completion bonus (exceeds worst realistic accumulated penalty)\n    #   + linear reward scaling with steps saved under target\n    if progress >= 99.5:\n        target_steps = 400\n        margin = target_steps - steps\n        reward += 300.0 + max(0.0, margin) * 20.0\n\n    return float(reward)",
+    "round": 6,
+    "elapsed_s": 168.52904748916626,
+    "rounds": 6
+  }
+]
