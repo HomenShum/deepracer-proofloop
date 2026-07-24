@@ -147,6 +147,70 @@ Point 4 is the honest one. This test proves a reward function is not obviously b
 
 ---
 
+## Round 1: an agent fixed a defect the human never fixed
+
+The loop has been run once. The full record is in `rounds/round_01_ledger.jsonl` and the diff is `rounds/round_01_v4d_is_reversed.patch`.
+
+**Target:** `v4d`, which scored a reversed lap at 208 percent of a perfect one. This defect was never fixed by the human. `v4d` is the newest of the twelve files.
+
+**The prediction, recorded before the change:**
+
+> `v4d` rewards a reversed lap because its dominant term is derived from step count alone and is blind to direction. It never reads `params['is_reversed']`. Adding `is_reversed` to the existing fail-closed guard makes the function reject a reversed lap on its own.
+> **Predicted mean on the optimal trajectory: 4.1125** (unchanged, because the guard fires only when reversed is true).
+
+**The change**, two lines:
+
+```diff
++        is_reversed = params.get('is_reversed', False)
+...
+-        ## Zero reward if off track ##
+-        if not all_wheels_on_track or is_offtrack:
++        ## Zero reward if off track or driving the wrong way ##
++        if not all_wheels_on_track or is_offtrack or is_reversed:
+```
+
+**The result:**
+
+| | Value |
+| --- | --- |
+| Predicted mean on optimal | 4.1125 |
+| Measured mean on optimal | 4.1125 |
+| **Prediction error** | **0.0 percent** |
+| Reversed lap, before | 208 percent of optimal |
+| Reversed lap, after | 0 percent of optimal |
+| Regression on other trajectories | none, all identical |
+
+**The round was still rejected.** The verdict on the claim was SUPPORTED, but the gate set still fails, so the function is not accepted as fixed. That is the design working: one correct fix does not make a broken function correct.
+
+### The third defect, found by running the loop
+
+The failing gate is not the one that was targeted. `v4d` raises `UnboundLocalError: cannot access local variable 'prev_waypoint_heading'` on **106 of its 214 steps**, about half the lap. Verified present in the unmodified original, so the change did not cause it.
+
+The cause is structural. Three loops read `prev_waypoint_heading`, but it is assigned only in the first and third:
+
+```
+line 517:  heading_prev = prev_waypoint_heading      # loop 1, reads
+line 529:  prev_waypoint_heading = waypoint_heading  # loop 1, assigns
+line 564:  heading_prev = prev_waypoint_heading      # loop 2, reads
+                                                     # loop 2 never assigns
+line 615:  heading_prev = prev_waypoint_heading      # loop 3, reads
+line 627:  prev_waypoint_heading = waypoint_heading  # loop 3, assigns
+```
+
+The second loop was duplicated from the first and the trailing assignment was dropped. **Half of every training episode's reward signal was throwing an exception, and the simulator absorbed it.**
+
+Nobody knew. It is a 35KB file that produced a competitive lap time anyway.
+
+### What this round does and does not show
+
+**It shows:** an agent found and fixed a real defect in code the human wrote and never fixed, predicted the numeric outcome exactly before running, and introduced no regression. The gate then correctly refused to call the function fixed.
+
+**It does not show** that an agent beats 18.121 s. That still needs training and a simulator. This is one round, against a defect the scorer had already localised.
+
+**One honest failure of protocol:** the same party proposed the change and judged it. The method says the judge must be a fresh context that never saw the build. That was not satisfied here, and the contamination is recorded in the ledger rather than hidden.
+
+**Running the loop also found a bug in the loop.** The ledger flagged the round as "tampered" because the target file changed between the prediction and the measurement. But that is the workflow: predict, edit, measure. The check was inverted. The real error condition is a file that is byte-identical at measurement time, which means a change was claimed and nothing was applied. Fixed in `loop/ledger.py`.
+
 ## Why this exists
 
 Most demonstrations of self-improving agents let the agent grade its own work. A lap time cannot be argued with, and neither can an off-track flag.

@@ -104,7 +104,13 @@ class Ledger:
 
         target = Path(target)
         digest_now = _digest(target)
-        swapped = digest_now != pending["target_digest"]
+
+        # The file is SUPPOSED to change between predict and measure. That is
+        # the workflow: predict, edit, measure. So a changed digest is normal.
+        # The suspicious case is the opposite one. If the digest is identical,
+        # a change was claimed and nothing was applied, so the round measures
+        # the same file the prediction was made against and proves nothing.
+        no_change_applied = digest_now == pending["target_digest"]
 
         predicted = pending["predicted_mean"]
         error = actual_mean - predicted
@@ -120,8 +126,9 @@ class Ledger:
             "passed_gates": bool(passed),
             "failures": list(failures),
             "target": target.name,
-            "target_digest": digest_now,
-            "file_changed_after_prediction": swapped,
+            "digest_at_prediction": pending["target_digest"],
+            "digest_at_measurement": digest_now,
+            "no_change_applied": no_change_applied,
         }
         self._append(event)
         return event
@@ -163,5 +170,5 @@ class Ledger:
             "unjudged": unjudged,
             "mean_abs_prediction_error": sum(errs) / len(errs) if errs else None,
             "mean_relative_error": sum(rels) / len(rels) if rels else None,
-            "tampered_rounds": sum(1 for r in results if r["file_changed_after_prediction"]),
+            "rounds_with_no_change": sum(1 for r in results if r["no_change_applied"]),
         }

@@ -1,0 +1,21 @@
+--- /tmp/v4d_original.py	2026-07-24 15:55:57.536484800 -0700
++++ data/reward_functions/reward_function_type3_opt10_rossprocw_v4d.py	2026-07-24 15:59:29.751011500 -0700
+@@ -392,6 +392,7 @@
+         waypoints = params['waypoints']
+         closest_waypoints = params['closest_waypoints']
+         is_offtrack = params['is_offtrack']
++        is_reversed = params.get('is_reversed', False)
+         abs_steering_angle = abs(params['steering_angle'])
+         ############### OPTIMAL X,Y,SPEED,TIME ################
+ 
+@@ -660,8 +661,8 @@
+             # Adjust the reward
+             reward += 50 - (50 * cubic_component)
+ 
+-        ## Zero reward if off track ##
+-        if not all_wheels_on_track or is_offtrack:
++        ## Zero reward if off track or driving the wrong way ##
++        if not all_wheels_on_track or is_offtrack or is_reversed:
+             reward = 1e-3
+ 
+         finish_reward = reward

@@ -85,7 +85,7 @@ Prediction error: {error} ({relative:.1%})
 GATES: {gate_state}
 {failures}
 
-FILE CHANGED AFTER THE PREDICTION WAS RECORDED: {tampered}
+WAS A CHANGE ACTUALLY APPLIED: {tampered}
 
 ANSWER
     VERDICT: SUPPORTED or NOT_SUPPORTED
@@ -167,8 +167,8 @@ def main() -> int:
         print(f"  gates     {'PASS' if ev['passed_gates'] else 'FAIL'}")
         for f in ev["failures"]:
             print(f"    - {f}")
-        if ev["file_changed_after_prediction"]:
-            print("  WARNING: the file changed after the prediction was recorded.")
+        if ev["no_change_applied"]:
+            print("  WARNING: the file is byte-identical to the prediction. No change was applied.")
         print(f"\nNow judge it with a fresh context:")
         print(JUDGE_PROMPT.format(
             hypothesis=next(e["hypothesis"] for e in led.events()
@@ -181,7 +181,7 @@ def main() -> int:
             relative=ev["relative_error"],
             gate_state="PASS" if ev["passed_gates"] else "FAIL",
             failures="\n".join(f"    - {f}" for f in ev["failures"]) or "    (none)",
-            tampered="yes" if ev["file_changed_after_prediction"] else "no",
+            tampered="no change was applied" if ev["no_change_applied"] else "yes, a change was applied as expected",
         ))
         return 0
 
@@ -204,8 +204,8 @@ def main() -> int:
         if s["mean_abs_prediction_error"] is not None:
             print(f"  mean |prediction error| {s['mean_abs_prediction_error']:.4f}")
             print(f"  mean relative error     {s['mean_relative_error']:.1%}")
-        if s["tampered_rounds"]:
-            print(f"  TAMPERED ROUNDS       {s['tampered_rounds']}")
+        if s["rounds_with_no_change"]:
+            print(f"  ROUNDS WITH NO EDIT   {s['rounds_with_no_change']}")
         print()
         return 0
 
