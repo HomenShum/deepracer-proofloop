@@ -41,7 +41,7 @@ sys.path.insert(0, str(ROOT / "sim"))
 
 from core import load_reward_function  # noqa: E402
 from track_sim import (  # noqa: E402
-    DT, MAX_STEPS, MAX_STEER_DEG, SPEED_TAU, WHEELBASE,
+    DT, MAX_STEPS, MAX_STEER_DEG, SPEED_TAU, WHEELBASE, _yaw_rate_deg,
     load_line, load_actions, _closest_index, _cross_track_error, _snap,
 )
 
@@ -130,7 +130,7 @@ def rollout(line, actions, g, track_width=1.2):
             return True, step, step * DT, trace
 
         speed += (target - speed) * (DT / SPEED_TAU)
-        heading += math.degrees(speed / WHEELBASE * math.tan(math.radians(steer)) * DT)
+        heading += _yaw_rate_deg(speed, steer) * DT
         heading = (heading + 180.0) % 360.0 - 180.0
         x += speed * math.cos(math.radians(heading)) * DT
         y += speed * math.sin(math.radians(heading)) * DT

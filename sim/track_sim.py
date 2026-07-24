@@ -43,6 +43,32 @@ SPEED_TAU = 0.25         # first-order lag on reaching target speed, seconds
 TRACK_HALF_WIDTH = 0.60  # drivable corridor either side of the racing line
 MAX_STEPS = 3000         # a lap that takes longer than this is a DNF
 
+# Grip limit, derived from the racing line data itself, not assumed.
+# For every point on optimals_newest_Ross_racing_line.txt, v^2 / R peaks at
+# 2.01 m/s^2. The line's speed profile (1.30 to 4.00 m/s) exists because of
+# that limit. A simulator that ignores it lets the car corner at impossible
+# speeds, and any search run against it will exploit exactly that.
+#
+# Without this cap the trained laps came out at 15.27 s against a theoretical
+# perfect lap of 18.147 s, which is physically impossible and invalidated
+# every result measured before it was added.
+MAX_LATERAL_ACCEL = 2.01  # m/s^2, about 0.21 g
+
+
+def _yaw_rate_deg(speed: float, steer_deg: float) -> float:
+    """Heading change per second, limited by grip.
+
+    The bicycle model wants v / L * tan(steer). Grip allows at most
+    a_max / v of lateral acceleration worth of turning. Demanding more
+    produces understeer: the car goes wide instead of turning, which is
+    what puts a car off the track when a corner is taken too fast.
+    """
+    want = speed / WHEELBASE * math.tan(math.radians(steer_deg))
+    if speed < 1e-6:
+        return 0.0
+    limit = MAX_LATERAL_ACCEL / speed          # rad/s
+    return math.degrees(max(-limit, min(limit, want)))
+
 
 # ---------------------------------------------------------------------------
 # Track
@@ -189,7 +215,7 @@ def simulate(line, actions, pol: Policy, track_width=TRACK_HALF_WIDTH * 2) -> La
 
         # kinematic bicycle update
         speed += (target_speed - speed) * (DT / SPEED_TAU)
-        heading += math.degrees(speed / WHEELBASE * math.tan(math.radians(steer)) * DT)
+        heading += _yaw_rate_deg(speed, steer) * DT
         heading = (heading + 180.0) % 360.0 - 180.0
         x += speed * math.cos(math.radians(heading)) * DT
         y += speed * math.sin(math.radians(heading)) * DT
