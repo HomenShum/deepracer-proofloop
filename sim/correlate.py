@@ -44,17 +44,20 @@ def build_laps():
 
 def analyse(path: Path, laps):
     fn = load_reward_function(path)
-    rewards = [score_lap(fn, l) for l in laps]
+    rewards = [score_lap(fn, l, mode="total") for l in laps]
+    rewards_mean = [score_lap(fn, l, mode="mean") for l in laps]
     times = [l.lap_time for l in laps]
     speeds = [-t for t in times]          # faster = higher
 
     rho = spearman(rewards, speeds)
+    rho_mean = spearman(rewards_mean, speeds)
     best_by_reward = max(range(len(laps)), key=lambda i: rewards[i])
     best_by_clock = min(range(len(laps)), key=lambda i: times[i])
     chosen, fastest = times[best_by_reward], times[best_by_clock]
     return {
         "name": path.name,
         "rho": rho,
+        "rho_mean": rho_mean,
         "chosen_time": chosen,
         "fastest_time": fastest,
         "penalty_s": chosen - fastest,
@@ -89,11 +92,11 @@ def main() -> int:
             print(f"  could not analyse {p.name}: {e}")
 
     rows.sort(key=lambda r: -r["rho"])
-    print(f"  {'reward function':<48} {'rho':>7} {'picks':>8} {'fastest':>8} {'cost':>8}")
-    print(f"  {'-'*48} {'-'*7} {'-'*8} {'-'*8} {'-'*8}")
+    print(f"  {'reward function':<46} {'rho SUM':>8} {'rho mean':>9} {'picks':>8} {'cost':>7}")
+    print(f"  {'-'*46} {'-'*8} {'-'*9} {'-'*8} {'-'*7}")
     for r in rows:
-        print(f"  {r['name']:<48} {r['rho']:>7.3f} {r['chosen_time']:>7.2f}s "
-              f"{r['fastest_time']:>7.2f}s {r['penalty_pct']:>6.1f}%")
+        print(f"  {r['name']:<46} {r['rho']:>8.3f} {r['rho_mean']:>9.3f} "
+              f"{r['chosen_time']:>7.2f}s {r['penalty_pct']:>6.1f}%")
 
     print("\n  rho      rank correlation between reward and speed. +1.0 is perfect.")
     print("  picks    lap time of the policy this reward function ranks highest.")

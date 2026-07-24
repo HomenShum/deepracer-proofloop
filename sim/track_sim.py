@@ -201,8 +201,22 @@ def simulate(line, actions, pol: Policy, track_width=TRACK_HALF_WIDTH * 2) -> La
 # The test: does the reward agree with the clock?
 # ---------------------------------------------------------------------------
 
-def score_lap(reward_fn, lap: Lap) -> float:
-    """Mean reward over the lap. Reward functions print; that output is discarded."""
+def score_lap(reward_fn, lap: Lap, mode: str = "total") -> float:
+    """Score a lap.
+
+    mode="total" is the DEFAULT and the correct one. Reinforcement learning
+    maximises the CUMULATIVE reward over an episode, so that is the quantity
+    that decides what policy you get.
+
+    mode="mean" divides by the step count. This was the original default and it
+    was wrong. Dividing by steps normalises away the step count, which hides the
+    most common failure in a hand-written reward function: a positive per-step
+    reward means a SLOWER lap has more steps and therefore earns more. The mean
+    looks healthy while the sum is telling the car to crawl. See the Round 2
+    retraction in the README.
+
+    Reward functions print on every step; that output is discarded.
+    """
     total, n = 0.0, 0
     with contextlib.redirect_stdout(io.StringIO()):
         for p in lap.params_trace:
@@ -211,7 +225,9 @@ def score_lap(reward_fn, lap: Lap) -> float:
             except Exception:
                 pass  # a raising step contributes nothing, which is itself a signal
             n += 1
-    return total / n if n else 0.0
+    if mode == "mean":
+        return total / n if n else 0.0
+    return total
 
 
 def spearman(a: list[float], b: list[float]) -> float:

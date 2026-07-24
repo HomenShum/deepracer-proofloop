@@ -211,9 +211,69 @@ Nobody knew. It is a 35KB file that produced a competitive lap time anyway.
 
 **Running the loop also found a bug in the loop.** The ledger flagged the round as "tampered" because the target file changed between the prediction and the measurement. But that is the workflow: predict, edit, measure. The check was inverted. The real error condition is a file that is byte-identical at measurement time, which means a change was claimed and nothing was applied. Fixed in `loop/ledger.py`.
 
-## Round 2: the agent's reward function picks a faster lap than the human's
+## RETRACTION: Round 2's conclusion was wrong
 
-Round 1 proved a fix worked. It did not prove the fix made the car faster. This does.
+**An earlier version of this README claimed the agent's fixed `v4d` picks a lap 0.60 s faster than the human's. That claim is withdrawn. A stronger test refuted it.**
+
+The measurement was wrong in a specific and instructive way. The correlation test scored each lap by **mean reward per step**. Reinforcement learning maximises **cumulative reward over an episode**, which is the sum.
+
+Dividing by the step count normalises away the step count. That hides the most common defect in a hand-written reward function: **if the per-step reward is positive, a slower lap has more steps and therefore earns more.** The mean looks healthy while the sum is telling the car to crawl.
+
+Rerunning the same 22 laps under both metrics:
+
+| Reward function | rho, **sum** | rho, mean |
+| --- | --- | --- |
+| `reward_function.py` | 0.997 | 0.999 |
+| `opt9` | 0.980 | 0.995 |
+| `v1` | 0.891 | 0.978 |
+| `opt10` | 0.812 | 0.916 |
+| `v4d` | 0.438 | 0.793 |
+| `v4b` | **−0.002** | 0.948 |
+| `v2` | **−0.016** | 0.967 |
+| `v4a` | **−0.093** | 0.947 |
+| `v4c` | **−0.094** | 0.953 |
+| `v4` | **−0.108** | 0.946 |
+| `v4a2` | **−0.137** | 0.940 |
+| `v3` | **−0.137** | 0.944 |
+
+**Seven of twelve are uncorrelated or anti-correlated with speed under the metric that governs training.** The mean column says all twelve are fine.
+
+`sim/track_sim.py` now defaults to `mode="total"`. The mean is still available and documented as misleading.
+
+### And the fix made it worse, not better
+
+Training a policy against each version, three seeds:
+
+| seed | human `v4d` | agent `v4d`, crash fixed |
+| --- | --- | --- |
+| 0 | 24.33 s | **30.67 s** |
+| 1 | 24.87 s | **30.53 s** |
+| 2 | 17.07 s | **30.53 s** |
+
+Sweeping 42 completing laps explains it:
+
+| | rho(reward, speed) | rho(reward, step count) | cost of its favourite lap |
+| --- | --- | --- | --- |
+| Human `v4d` (crashes) | −0.237 | +0.237 | +9.8 % |
+| Agent `v4d` (fixed) | **−0.907** | **+0.907** | **+50.5 %** |
+
+`v4d` sums a positive per-step reward, so total reward tracks step count almost perfectly. **The crash was suppressing roughly half of those per-step contributions and accidentally masking the pathology.** Fixing the crash made the reward fire on every step and strengthened the incentive to drive slowly, from −0.237 to −0.907.
+
+The agent's change was a correct bug fix and a worse reward function. Both are true.
+
+### What this episode is actually evidence for
+
+The doctrine says a proof must be able to fail. This one did, on its author.
+
+A published claim, backed by a real measurement, was overturned by a stronger measurement of the same system. The failure mode was not a coding error. It was **measuring a convenient quantity instead of the governing one**, which is the same class of mistake the whole method is written to catch.
+
+The original claim is left standing below, struck through, because deleting it would remove the evidence.
+
+---
+
+## ~~Round 2: the agent's reward function picks a faster lap than the human's~~ (RETRACTED, see above)
+
+Round 1 proved a fix worked. It did not prove the fix made the car faster. **This section claimed to, and was wrong. It is kept for the record.**
 
 ### The test that settles it
 
