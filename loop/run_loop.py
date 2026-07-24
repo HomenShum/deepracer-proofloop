@@ -122,6 +122,7 @@ def main() -> int:
 
     p = sub.add_parser("measure", help="run the scorer and record the result")
     p.add_argument("--target", required=True)
+    p.add_argument("--metric", choices=["discrimination","correlation"], default="discrimination")
 
     p = sub.add_parser("judge", help="record the fresh-context verdict")
     p.add_argument("--index", type=int, required=True)
@@ -153,7 +154,13 @@ def main() -> int:
     if args.cmd == "measure":
         target = Path(args.target)
         rep = evaluate(target)
-        actual = rep.optimal.mean if rep.optimal else 0.0
+        if args.metric == "correlation":
+            sys.path.insert(0, str(ROOT / "sim"))
+            from correlate import build_laps, analyse
+            laps, _ = build_laps()
+            actual = analyse(target, laps)["rho"]
+        else:
+            actual = rep.optimal.mean if rep.optimal else 0.0
         try:
             ev = led.record(actual, rep.passed, rep.failures, target)
         except LedgerError as e:

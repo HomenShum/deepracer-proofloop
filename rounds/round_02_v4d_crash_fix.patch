@@ -1,0 +1,11 @@
+--- /tmp/v4d_original.py	2026-07-24 15:55:57.536484800 -0700
++++ data/reward_functions/reward_function_type3_opt10_rossprocw_v4d.py	2026-07-24 16:07:04.653807900 -0700
+@@ -587,6 +587,8 @@
+                     
+                     break  # Exit loop once a high-degree turn is detected
+ 
++                prev_waypoint_heading = waypoint_heading
++
+             #########################################################################################
+ 
+ 

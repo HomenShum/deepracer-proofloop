@@ -211,6 +211,74 @@ Nobody knew. It is a 35KB file that produced a competitive lap time anyway.
 
 **Running the loop also found a bug in the loop.** The ledger flagged the round as "tampered" because the target file changed between the prediction and the measurement. But that is the workflow: predict, edit, measure. The check was inverted. The real error condition is a file that is byte-identical at measurement time, which means a change was claimed and nothing was applied. Fixed in `loop/ledger.py`.
 
+## Round 2: the agent's reward function picks a faster lap than the human's
+
+Round 1 proved a fix worked. It did not prove the fix made the car faster. This does.
+
+### The test that settles it
+
+A reward function has one job: rank fast trajectories above slow ones. If maximising the reward does not minimise lap time, the function is wrong.
+
+`sim/track_sim.py` implements a kinematic bicycle model at the DeepRacer control rate, using the real 21-action space and the real racing line. `sim/correlate.py` simulates a grid of 60 driving policies, keeps the ones that complete a lap, and measures the rank correlation between each reward function's score and actual lap time.
+
+**Every constant is taken from your own files.** The 15 Hz timestep comes from the reward functions themselves, which compute `current_actual_time = (step_count - 1) / 15`.
+
+### The head-to-head
+
+22 of 60 policies completed a lap. Lap times ran 16.67 s to 27.73 s. Both functions scored the identical set.
+
+| | rho | picks | cost vs fastest |
+| --- | --- | --- | --- |
+| Human `v4d`, as shipped | 0.7930 | 17.47 s | 4.8 percent |
+| **Agent `v4d`, crash fixed** | **0.9325** | **16.87 s** | **1.2 percent** |
+| **Delta** | **+0.1395** | **−0.60 s** | **−3.6 points** |
+
+**The agent's version selects a lap 0.60 seconds faster.**
+
+The prediction was recorded first: rho 0.950 predicted, 0.9325 measured, **1.8 percent error**.
+
+The change was one line, restoring an assignment the second loop was missing:
+
+```diff
++                prev_waypoint_heading = waypoint_heading
+```
+
+### Where all twelve land
+
+| Reward function | rho | picks | cost |
+| --- | --- | --- | --- |
+| `reward_function.py` | 0.999 | 16.67 s | 0.0 % |
+| `opt9` | 0.995 | 16.67 s | 0.0 % |
+| `v1` | 0.978 | 16.87 s | 1.2 % |
+| `v2` | 0.967 | 16.87 s | 1.2 % |
+| `v4c` | 0.953 | 16.87 s | 1.2 % |
+| `v4b`, `v4a`, `v4`, `v3`, `v4a2` | 0.940 – 0.948 | 16.87 s | 1.2 % |
+| `opt10` | 0.916 | 17.47 s | 4.8 % |
+| **`v4d`** | **0.793** | **17.47 s** | **4.8 %** |
+
+**The newest and largest function was the worst at the job.**
+
+### A correction to what this README said earlier
+
+`opt9` scores 0.995 here, but the discrimination test called it unable to distinguish anything. Both results are correct, and together they say something neither says alone.
+
+In the discrimination suite every trajectory has the same step count, so `opt9`'s step-count bonus is identical across all of them and it looks constant. In the simulator, laps run 250 to 416 steps, so the same bonus tracks lap time almost perfectly.
+
+`opt9` is a **sparse terminal reward**. It points at the right answer and gives no per-step learning signal. That is a more accurate description than "broken", and the earlier wording is corrected above.
+
+### Limits of this proof, stated plainly
+
+1. **This is not the AWS simulator.** The 0.60 s is on this model's lap times. It does not translate to the 18.121 s AWS figure and no claim is made that it does. What transfers is the ranking.
+2. **The bar was low.** The agent fixed a crash. The human's function was broken, not merely suboptimal. Beating broken code is easier than beating good code.
+3. **One target, one metric, one round.**
+4. **The judge was not independent.** The same party proposed and judged, which the method forbids. It is recorded in the ledger rather than hidden.
+
+### What is now proven, and what is not
+
+**Proven:** an agent found a defect in shipped human code, fixed it in one line, predicted the numeric outcome to within 1.8 percent before running, and the corrected function selects a measurably faster lap on a common test set.
+
+**Not proven:** that an agent beats 18.121 s on AWS. That needs the retired managed service or self-hosted compute, and the number is specific to a platform that no longer exists in that form.
+
 ## Why this exists
 
 Most demonstrations of self-improving agents let the agent grade its own work. A lap time cannot be argued with, and neither can an off-track flag.
