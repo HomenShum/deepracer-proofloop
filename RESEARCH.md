@@ -70,9 +70,11 @@ This is not a forced fit. NodeRL's own description is:
 
 > "Turn failed agent runs into the next better attempt, and into training data. Records what your agent did (NodeTrace), scores the outcome (NodeEval), remembers what worked and failed (NodeMem), and feeds the loop that retries until the task is proven. **NodeRL is the environment + reward + memory + dataset-exporter layer that most agentic-RL efforts are missing.**"
 
-DeepRacer ProofLoop is exactly a NodeRL environment, and the mapping is one to one:
+DeepRacer ProofLoop maps onto a NodeRL environment. The mapping below is **PLANNED, not implemented.**
 
-| NodeRL layer | What it is here |
+> **This table is a design intent. The code does not exist.** This repository imports no Node package. It reimplements a subset of these ideas in plain Python, and `PLAN.md` records which parts are enforced and which are not. The table was published earlier without this label, which allowed a reader to believe the integration was built. That was the same error as an unlabelled claim anywhere else: a plan that is not marked as a plan cannot be tested, so it cannot fail.
+
+| NodeRL layer | What it would be here (PLANNED) |
 | --- | --- |
 | **Environment** | `sim/track_sim.py`, the grip-limited simulator |
 | **Reward** (outer) | trained lap time from `sim/train.py`, not the reward function's own output |

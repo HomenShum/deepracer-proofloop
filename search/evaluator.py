@@ -7,6 +7,8 @@ trained to maximise it. Not the reward. Not a correlation. The lap time.
 
 Gates, all derived from a failure already observed in this repo:
 
+  G0 allowlist + isolation     the syntax tree is checked before any code
+                               runs, then a probe runs in a subprocess
   G1 imports and runs          a candidate that raises is worthless
   G2 the trained policy finishes  reward_function.py trains to a DNF
   G3 not a step farmer         rho(reward, steps) must not exceed
@@ -29,6 +31,7 @@ sys.path.insert(0, str(ROOT / "scorer"))
 sys.path.insert(0, str(ROOT / "sim"))
 
 from core import load_reward_function                    # noqa: E402
+from sandbox import admit                                # noqa: E402
 from track_sim import load_line, load_actions, spearman  # noqa: E402
 import train as trainer                                  # noqa: E402
 
@@ -86,8 +89,18 @@ def evaluate(source: str, iters=6, pop=24, seed=0, name=None) -> dict:
     """Score one candidate reward function. Lower lap_time is better."""
     out = {
         "lap_time": float("inf"), "passed": False, "failures": [],
-        "rho_speed": None, "rho_steps": None, "path": None,
+        "rho_speed": None, "rho_steps": None, "path": None, "sha256": None,
     }
+
+    # G0 the allowlist, checked on the syntax tree BEFORE any code runs, then a
+    # probe run in a separate process. This is the NodeAgent pattern: limit the
+    # tools before the model acts, do not ask the model to limit itself.
+    verdict = admit(source)
+    out["sha256"] = verdict["sha256"]
+    if not verdict["admitted"]:
+        out["failures"].append(f"G0 rejected by the allowlist: {verdict['reasons'][0]}")
+        return out
+
     try:
         path = write_candidate(source, name)
         out["path"] = str(path)
