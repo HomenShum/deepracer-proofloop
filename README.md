@@ -339,6 +339,87 @@ In the discrimination suite every trajectory has the same step count, so `opt9`'
 
 **Not proven:** that an agent beats 18.121 s on AWS. That needs the retired managed service or self-hosted compute, and the number is specific to a platform that no longer exists in that form.
 
+## The portable core: ProofLoop
+
+The rules in this repository are not about racing. They are about deciding what to believe when an agent says it improved something.
+
+`proofloop/` holds that decision layer, separated from the task. It has **no dependency outside the Python standard library**, so a reader can copy it into another project without bringing anything with it.
+
+**An environment supplies five methods.** Nothing else.
+
+| Method | Meaning |
+| --- | --- |
+| `name()` | the identity of the environment |
+| `baseline()` | the score to beat: a human result, or a known method |
+| `bound()` | the best score physics or mathematics allows, or none |
+| `propose_context()` | what the agent must know to write a candidate |
+| `score(artifact, seed)` | the verifiable reward, plus the gate results |
+
+`score` must be deterministic for a given seed. Otherwise the loop cannot tell an improvement from noise.
+
+### Seven rules that cannot be turned off
+
+Each rule exists because this repository made the matching mistake and recorded it in `CHANGELOG.md`.
+
+| Rule | Came from |
+| --- | --- |
+| R1 Default FAIL | a passing check that proved nothing |
+| R2 Limit the tools before the agent acts | a prompt that asked a model to behave |
+| R3 Isolate the run | model code executing in the main process |
+| R4 Score the governing quantity | scoring a mean when training maximised a sum |
+| R5 Check the evaluator against a known bound | a 15.27 s lap against an 18.147 s floor |
+| R6 Report the mean across seeds, and the spread | an 18.40 s result that was one lucky seed |
+| R7 Keep a retraction, do not delete it | a published claim that was wrong |
+
+### Two environments, so portability is tested and not asserted
+
+An interface with one implementation is a single program with extra steps.
+
+| Environment | Artifact | Verifiable reward | Bound |
+| --- | --- | --- | --- |
+| `envs/deepracer.py` | a reward function | the lap time of a policy trained on it | 18.147 s, the racing line's own times |
+| `envs/tsp.py` | a tour heuristic | the tour length | 29.840, brute force over nine cities |
+
+The travelling-salesman environment shares nothing with DeepRacer. No simulator, no policy, no training. **The loop ran on it with no change to `proofloop/loop.py`.**
+
+```
+python proofloop/demo.py --env tsp --rounds 5 --proposer scripted
+```
+
+```
+round  1: REJECTED  [disallowed_code]     the candidate imported os
+round  2: REJECTED  [invalid_output]      the tour visited a city twice
+round  3:  no gain  mean 41.264           equals the baseline
+round  4: ACCEPTED  mean 29.840           reached the brute-force optimum
+round  5: ACCEPTED  mean 32.105           worse, so not kept as best
+PROVEN: True
+  - no independent party has reviewed this result
+```
+
+The last line is the point. The loop states the condition it has not met instead of hiding it.
+
+## Where this sits in the current literature
+
+The lap time and the tour length are **verifiable rewards**: a machine computes them from the outcome and no model judges them. That is the RLVR setting, which DeepSeek-R1 established as a general post-training paradigm.
+
+[SEAGym](https://arxiv.org/abs/2606.17546) describes a self-evolving agent that supplies both the task policy and the harness-update rule, connected through a rollout and update interface. [The Landscape of Agentic Reinforcement Learning for LLMs](https://arxiv.org/abs/2509.02547) frames the shift from single-step decisions to temporally extended, partially observable ones. [Agent2 RL-Bench](https://arxiv.org/html/2604.10547v1) asks whether agents can engineer agentic RL post-training at all.
+
+**This repository does not compete with those.** They run the rollouts. AgentGym-RL, SEAGym, and Harbor already do that well.
+
+This is the layer that most self-improvement work leaves implicit: **the part that says no.** The field's practical problem is that reported self-improvements often do not replicate. This repository has a written record of killing three of its own false positives, including one it had already published.
+
+## What each part demonstrates
+
+This repository copies the pattern from the Node ecosystem. **It imports none of that code**, which is what makes it portable.
+
+| Part of this repository | Node component | What it shows |
+| --- | --- | --- |
+| Gates G0 to G4 | **NodeProof** | A claim of success needs evidence. The default is FAIL. |
+| `receipts/` | **NodeTrace** | Every claim links to the run that produced it. |
+| `memory/`, grouped by mechanism | **NodeMem** | The search remembers the class of a failure, not the round number. |
+| `search/sandbox.py` | **NodeAgent** | Limit the tools before the model acts. |
+| The whole loop | **NodeRL** | Environment, reward, memory, and dataset export in one cycle. |
+
 ## Why this exists
 
 Most demonstrations of self-improving agents let the agent grade its own work. A lap time cannot be argued with, and neither can an off-track flag.

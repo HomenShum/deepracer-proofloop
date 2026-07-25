@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "search"))
 
-from core import Gate, Result          # noqa: E402
+from loop import Gate, Result          # noqa: E402
 from sandbox import admit, run_isolated  # noqa: E402
 
 # A fixed nine-city instance. Fixed so the result is reproducible.

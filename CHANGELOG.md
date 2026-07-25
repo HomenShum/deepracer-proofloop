@@ -119,6 +119,42 @@ has reviewed the result.
 
 ---
 
+### Fixed: a module name collision (proofloop/core.py renamed to loop.py)
+
+`proofloop/core.py` had the same module name as `scorer/core.py`. When the
+proofloop directory came first on the search path, `search/evaluator.py` imported
+the wrong module and failed.
+
+**Reason:** the collision was mine. The fix is a unique name, not a change to the
+search path order. A path trick would have hidden the problem instead of removing it.
+
+---
+
+### Added: DeepRacer as a ProofLoop environment (proofloop/envs/deepracer.py)
+
+DeepRacer now supplies the same five methods as the travelling-salesman environment.
+One loop drives both. `proofloop/loop.py` knows nothing about racing.
+
+**Reason:** the portable interface was proven on a new task only. The original task
+still ran through its own path, so the two could drift apart. Now they cannot.
+
+The environment also maps each evaluator failure onto a mechanism class:
+`disallowed_code`, `syntax_error`, `step_farming`, `early_termination`, and
+`runtime_error`. The memory groups by class, so the proposer sees that a kind of
+mistake failed four times, and not four rounds that look unrelated.
+
+---
+
+### Added: the ecosystem map in README.md (Step 6)
+
+The README now states which Node component each part of this repository demonstrates,
+and says plainly that this repository imports none of that code.
+
+**Reason:** a reader must be able to find the full system after they read the small one.
+A demonstration that hides its source teaches nothing.
+
+---
+
 ## Earlier work, for the record
 
 ### Retracted: Round 2 claimed the agent picks a faster lap

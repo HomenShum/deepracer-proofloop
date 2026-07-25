@@ -1,0 +1,8 @@
+{
+  "early_termination": {
+    "count": 1,
+    "examples": [
+      "G2 the trained policy does not finish a lap"
+    ]
+  }
+}

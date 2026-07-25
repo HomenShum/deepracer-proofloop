@@ -1,0 +1,33 @@
+{
+  "env": "deepracer",
+  "round": 1,
+  "artifact_sha256": "745bb8c26d39f1e4da385b51cbd229668e5b7dff6c8477f06b7e187733732020",
+  "accepted": false,
+  "mechanism": "early_termination",
+  "gates": [
+    {
+      "name": "G0_allowlist",
+      "passed": true,
+      "reason": "allowlist clear"
+    },
+    {
+      "name": "G1_imports",
+      "passed": true,
+      "reason": "imports and runs"
+    },
+    {
+      "name": "G3_not_step_farmer",
+      "passed": true,
+      "reason": "rho(speed)=+1.000 rho(steps)=-1.000"
+    },
+    {
+      "name": "G2_finishes",
+      "passed": false,
+      "reason": "G2 the trained policy does not finish a lap"
+    }
+  ],
+  "seed_values": [],
+  "baseline": 18.47,
+  "bound": 18.147,
+  "created_at": 1785011467.0210145
+}

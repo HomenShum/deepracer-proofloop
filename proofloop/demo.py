@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent / "envs"))
 sys.path.insert(0, str(ROOT / "search"))
 
-from core import run_loop, print_report  # noqa: E402
+from loop import run_loop, print_report  # noqa: E402
 
 # A ladder of scripted candidates: two that must be REJECTED, then real ones.
 SCRIPTED = [
@@ -86,19 +86,23 @@ def llm_proposer(model: str):
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--env", default="tsp", choices=["tsp"])
+    ap.add_argument("--env", default="tsp", choices=["tsp", "deepracer"])
     ap.add_argument("--rounds", type=int, default=6)
     ap.add_argument("--seeds", type=int, default=5)
     ap.add_argument("--proposer", default="scripted", choices=["scripted", "llm"])
     ap.add_argument("--model", default="z-ai/glm-5.2")
     args = ap.parse_args()
 
-    from tsp import TspEnv
-    env = TspEnv()
+    if args.env == "tsp":
+        from tsp import TspEnv
+        env = TspEnv()
+    else:
+        from deepracer import DeepRacerEnv
+        env = DeepRacerEnv()
 
     print(f"\nProofLoop demo: {env.name()}")
-    print(f"  baseline (nearest neighbour) {env.baseline():.4f}")
-    print(f"  known optimum (brute force)  {env.bound():.4f}")
+    print(f"  baseline  {env.baseline():.4f}")
+    print(f"  bound     {env.bound():.4f}")
     print(f"  proposer: {args.proposer}\n")
 
     proposer = (scripted_proposer() if args.proposer == "scripted"

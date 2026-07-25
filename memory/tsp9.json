@@ -1,12 +1,12 @@
 {
   "disallowed_code": {
-    "count": 1,
+    "count": 2,
     "examples": [
       "imports 'os'"
     ]
   },
   "invalid_output": {
-    "count": 1,
+    "count": 2,
     "examples": [
       "invalid tour: [0, 0, 1]"
     ]
