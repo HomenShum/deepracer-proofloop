@@ -37,7 +37,13 @@ import train as trainer                                  # noqa: E402
 
 LINE = load_line(ROOT / "data" / "lines" / "optimals_newest_Ross_racing_line.txt")
 ACTS = load_actions(ROOT / "data" / "lines" / "AS21_newest_Ross_racing_line.txt")
-PHYSICAL_FLOOR = 18.147          # sum of the racing line's own per-point times
+# NOT a physical floor. This is the time to FOLLOW the racing line at its own
+# prescribed speeds. The corridor permits a lateral offset, and a trained policy
+# was measured driving 40.614 m against the line's 41.509 m, which is 2.16 percent
+# shorter. A shorter path exists, so laps below this number are legal.
+# The true lower bound for the corridor is NOT KNOWN.
+RACING_LINE_TIME = 18.147
+PHYSICAL_FLOOR = RACING_LINE_TIME  # kept for callers; see the note above
 HUMAN_BEST = 18.47               # opt9, trained, under the grip limit
 
 _SCRATCH = Path(tempfile.gettempdir()) / "pdd_candidates"

@@ -79,7 +79,11 @@ These rules come from failures this repository already made.
 
 **R4. Score the governing quantity.** Not a convenient proxy. This repository scored a mean when training maximised a sum, and published a wrong result.
 
-**R5. Check the evaluator against a known bound.** This repository produced a 15.27 s lap when 18.147 s was the physical floor. The search was exploiting the simulator.
+**R5. Check the evaluator against a known bound.** This repository produced a 15.27 s lap when 18.147 s was believed to be the physical floor. The search was exploiting the simulator.
+
+**R5a. A wrong bound is worse than no bound.** The 18.147 s figure was not a floor. It is the time to follow one particular racing line, and the corridor permits cutting inside it: a trained policy was measured driving 40.614 m against the line's 41.509 m. A legitimate 17.5 s lap would have been rejected as an "evaluator violation" by a number that was simply mislabelled.
+
+A bound must be a bound. If you have only a reference value, `bound()` must return none, and R5 does not run. Silence is honest. A false rejection is not, because it removes true results and leaves no trace of having done so.
 
 **R6. Report the mean across seeds, and the spread.** A margin inside the spread is not a win.
 

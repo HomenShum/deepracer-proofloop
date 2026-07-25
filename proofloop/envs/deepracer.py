@@ -58,7 +58,16 @@ class DeepRacerEnv:
         return HUMAN_BEST
 
     def bound(self) -> float | None:
-        return PHYSICAL_FLOOR
+        # None means "no known bound", and rule R5 cannot run.
+        #
+        # 18.147 s was used here as a physical floor. It is not one. It is the
+        # time to follow the racing line at its own speeds, and the corridor
+        # permits cutting inside that line: a trained policy drove 40.614 m
+        # against the line's 41.509 m. A legitimate 17.5 s lap would have been
+        # rejected as an "evaluator violation" by a bound that was simply wrong.
+        #
+        # A wrong bound is worse than no bound. It rejects true results silently.
+        return None
 
     def propose_context(self) -> str:
         return (

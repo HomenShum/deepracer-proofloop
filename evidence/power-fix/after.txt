@@ -1,0 +1,19 @@
+
+Variance against inner training budget
+physical floor 18.147s, 9 seeds per cell
+
+  design   iters   pop     mean      sd  DNF  seeds for 0.35s   for 0.10s
+  ------- ------ ----- -------- ------- ---- ---------------- -----------
+  opt9         8    32  18.483s   0.576    1               43         531
+  opt10        8    32  18.630s   0.175    0                4          49
+  opt9        14    48  17.748s   0.309    0               12         153
+  opt10       14    48  18.526s   0.091    0                1          13
+  opt9        22    64  17.481s   0.274    0               10         120
+  opt10       22    64  18.467s   0.054    0                0           5
+  opt9        30    96  17.311s   0.157    0                3          40
+  opt10       30    96  18.511s   0.063    0                1           6
+
+  written to sim/power_results.json
+
+  lowest variance: opt10 at 22x64, sd 0.054
+  at that sd, detecting the 0.35s headroom needs about 0 seeds per design
