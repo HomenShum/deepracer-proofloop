@@ -1,0 +1,14 @@
+{
+  "disallowed_code": {
+    "count": 1,
+    "examples": [
+      "imports 'os'"
+    ]
+  },
+  "invalid_output": {
+    "count": 1,
+    "examples": [
+      "invalid tour: [0, 0, 1]"
+    ]
+  }
+}

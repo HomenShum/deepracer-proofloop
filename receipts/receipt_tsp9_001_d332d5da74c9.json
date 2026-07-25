@@ -1,0 +1,18 @@
+{
+  "env": "tsp9",
+  "round": 1,
+  "artifact_sha256": "d332d5da74c9e78341c80a4381ad445bae63dc75e5cf3b520e31c19bd32a4efd",
+  "accepted": false,
+  "mechanism": "disallowed_code",
+  "gates": [
+    {
+      "name": "G0_allowlist",
+      "passed": false,
+      "reason": "imports 'os'"
+    }
+  ],
+  "seed_values": [],
+  "baseline": 41.264103649380786,
+  "bound": 29.840117864142663,
+  "created_at": 1784938723.3756156
+}

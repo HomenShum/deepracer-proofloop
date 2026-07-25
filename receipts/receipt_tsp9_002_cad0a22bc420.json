@@ -1,0 +1,28 @@
+{
+  "env": "tsp9",
+  "round": 2,
+  "artifact_sha256": "cad0a22bc420632990abfc3867e2e4eb855aa8f8581a5eb8985d23067e123bde",
+  "accepted": false,
+  "mechanism": "invalid_output",
+  "gates": [
+    {
+      "name": "G0_allowlist",
+      "passed": true,
+      "reason": "allowlist clear"
+    },
+    {
+      "name": "G1_runs",
+      "passed": true,
+      "reason": "ran"
+    },
+    {
+      "name": "G2_valid_tour",
+      "passed": false,
+      "reason": "invalid tour: [0, 0, 1]"
+    }
+  ],
+  "seed_values": [],
+  "baseline": 41.264103649380786,
+  "bound": 29.840117864142663,
+  "created_at": 1784938723.4817612
+}

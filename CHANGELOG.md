@@ -76,6 +76,49 @@ The table that maps this loop onto the NodeRL layers now has the word PLANNED in
 
 ---
 
+### Added: ProofLoop, a portable interface (proofloop/)
+
+`proofloop/SPEC.md` defines five methods an environment must supply. `proofloop/core.py`
+holds the loop, the failure memory, and the receipts. Neither file imports anything
+outside the Python standard library.
+
+**Reason:** the harness was welded to DeepRacer. An idea welded to one problem cannot
+travel. The interface separates the rule set from the task.
+
+**Seven rules cannot be turned off.** Each one comes from a mistake this repository
+already made and recorded: default FAIL, limit the tools before the agent acts, isolate
+the run, score the governing quantity, check the evaluator against a known bound, report
+the mean across seeds, and keep a retraction.
+
+---
+
+### Added: a second environment (proofloop/envs/tsp.py)
+
+A nine-city travelling-salesman instance. It has no simulator, no policy, and no
+training. The artifact is a Python heuristic. The reward is the tour length. The optimum
+is computed by brute force, so rule R5 has a real bound to test.
+
+**Reason:** an interface with one implementation is a single program with extra steps.
+Portability is a claim, so it needs evidence.
+
+**Result:** the loop ran on the new environment with no change to `core.py`.
+
+| Round | Outcome |
+| --- | --- |
+| 1 | REJECTED, `disallowed_code`. The candidate imported `os`. |
+| 2 | REJECTED, `invalid_output`. The tour visited a city twice. |
+| 3 | No gain. Nearest neighbour equals the baseline at 41.264. |
+| 4 | ACCEPTED. Nearest neighbour with 2-opt reached 29.840. |
+| 5 | ACCEPTED but worse at 32.105. Not recorded as the best. |
+
+The best result, 29.840, equals the brute-force optimum. Five seeds, standard deviation
+0.000, because the task is deterministic.
+
+The loop reports PROVEN, and names the one condition still open: no independent party
+has reviewed the result.
+
+---
+
 ## Earlier work, for the record
 
 ### Retracted: Round 2 claimed the agent picks a faster lap

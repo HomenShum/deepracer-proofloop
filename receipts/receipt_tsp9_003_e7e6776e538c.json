@@ -1,0 +1,41 @@
+{
+  "env": "tsp9",
+  "round": 3,
+  "artifact_sha256": "e7e6776e538c0e13cb25237a2c563cdded802db3b0454982e077b5176d206307",
+  "accepted": false,
+  "mechanism": null,
+  "gates": [
+    {
+      "name": "G0_allowlist",
+      "passed": true,
+      "reason": "allowlist clear"
+    },
+    {
+      "name": "G1_runs",
+      "passed": true,
+      "reason": "ran"
+    },
+    {
+      "name": "G2_valid_tour",
+      "passed": true,
+      "reason": "visits every city once"
+    },
+    {
+      "name": "G3_within_bound",
+      "passed": true,
+      "reason": "length 41.2641, optimum 29.8401"
+    }
+  ],
+  "seed_values": [
+    41.264103649380786,
+    41.264103649380786,
+    41.264103649380786,
+    41.264103649380786,
+    41.264103649380786
+  ],
+  "mean": 41.264103649380786,
+  "stdev": 0.0,
+  "baseline": 41.264103649380786,
+  "bound": 29.840117864142663,
+  "created_at": 1784938723.8757384
+}
