@@ -1,0 +1,19 @@
+
+Real track: 2022_april_pro_ccw, width 1.067 m
+Racing-line reference time 23.362 s
+Off-track is now distance from the CENTRE line vs half width.
+
+  design        mean      sd      best    DNF
+  -------- --------- ------- --------- ------
+  opt9       all DNF                      5/5
+  opt10      all DNF                      5/5
+
+  Any lap materially below 23.362s now needs an explanation,
+  because the racing line already uses the full track width.
+
+UNRESOLVED
+  0 of 75 grid policies complete the 2022_april_pro_ccw track.
+  Median death at step 41, max 63.
+  The reference racing line IS drivable (0 of 226 points off track).
+  So the track model is consistent; the pure-pursuit controller cannot drive it.
+  Cause not yet identified. The controller was tuned against the Ross line.

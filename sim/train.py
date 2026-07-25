@@ -40,13 +40,18 @@ sys.path.insert(0, str(ROOT / "scorer"))
 sys.path.insert(0, str(ROOT / "sim"))
 
 from core import load_reward_function  # noqa: E402
+from track import load_track  # noqa: E402
+from track_sim import lateral_accel_from_line  # noqa: E402
 from track_sim import (  # noqa: E402
     DT, MAX_STEPS, MAX_STEER_DEG, SPEED_TAU, WHEELBASE, _yaw_rate_deg,
     load_line, load_actions, _closest_index, _cross_track_error, _snap,
 )
 
-LINE_PATH = ROOT / "data" / "lines" / "optimals_newest_Ross_racing_line.txt"
-ACTION_PATH = ROOT / "data" / "lines" / "AS21_newest_Ross_racing_line.txt"
+# Switched to the track for which REAL border geometry exists. The Ross line
+# had no track file, so off-track could only be guessed from the racing line.
+LINE_PATH = ROOT / "data" / "lines" / "optimals_newest_2022_april_pro_ccw.txt"
+ACTION_PATH = ROOT / "data" / "lines" / "AS21_newest_2022_april_pro_ccw.txt"
+TRACK_NAME = "2022_april_pro_ccw"
 
 # Policy genome. Five knobs, wide enough that CEM can find genuinely
 # different driving styles rather than nudging one.
@@ -75,7 +80,25 @@ def _curvature(line, i, span=6) -> float:
     return min(d, 360 - d) / 90.0
 
 
-def rollout(line, actions, g, track_width=1.2):
+_TRACK = None
+_AMAX = None
+
+
+def _amax(line):
+    global _AMAX
+    if _AMAX is None:
+        _AMAX = lateral_accel_from_line(line)
+    return _AMAX
+
+
+def _track():
+    global _TRACK
+    if _TRACK is None:
+        _TRACK = load_track(TRACK_NAME)
+    return _TRACK
+
+
+def rollout(line, actions, g, track_width=None):
     """Simulate one genome. Returns (finished, steps, lap_time, params_trace)."""
     la = int(round(g[0]))
     speed_scale, lateral, caution, steer_gain = g[1], g[2], g[3], g[4]
@@ -109,17 +132,21 @@ def rollout(line, actions, g, track_width=1.2):
         speed_cmd = t[2] * speed_scale / (1.0 + caution * curv)
         steer, target = _snap(actions, steer_cmd, speed_cmd)
 
-        cte = _cross_track_error(line, idx, x, y)
-        off = cte > track_width / 2.0
+        # Real geometry. distance_from_center is measured from the CENTRE line
+        # and compared with half the real track width, which is what DeepRacer
+        # does. Measuring from the racing line let the car drive in the grass.
+        tk = _track()
+        cte = tk.distance_from_center(x, y)
+        off = cte > tk.limit
 
         trace.append({
             "all_wheels_on_track": not off, "x": x, "y": y,
             "closest_waypoints": [idx, (idx + 1) % n],
             "distance_from_center": cte, "is_crashed": False,
-            "is_left_of_center": True, "is_offtrack": off, "is_reversed": False,
+            "is_left_of_center": tk.is_left_of_center(x, y), "is_offtrack": off, "is_reversed": False,
             "heading": heading, "progress": min(100.0, visited / n * 100.0),
             "speed": speed, "steering_angle": steer, "steps": step,
-            "track_length": total_len, "track_width": track_width,
+            "track_length": total_len, "track_width": tk.width,
             "waypoints": [[p[0], p[1]] for p in line],
         })
 
@@ -130,7 +157,7 @@ def rollout(line, actions, g, track_width=1.2):
             return True, step, step * DT, trace
 
         speed += (target - speed) * (DT / SPEED_TAU)
-        heading += _yaw_rate_deg(speed, steer) * DT
+        heading += _yaw_rate_deg(speed, steer, _amax(line)) * DT
         heading = (heading + 180.0) % 360.0 - 180.0
         x += speed * math.cos(math.radians(heading)) * DT
         y += speed * math.sin(math.radians(heading)) * DT

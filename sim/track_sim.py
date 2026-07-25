@@ -52,10 +52,34 @@ MAX_STEPS = 3000         # a lap that takes longer than this is a DNF
 # Without this cap the trained laps came out at 15.27 s against a theoretical
 # perfect lap of 18.147 s, which is physically impossible and invalidated
 # every result measured before it was added.
-MAX_LATERAL_ACCEL = 2.01  # m/s^2, about 0.21 g
+# PER TRACK. This constant must be derived from the racing line of the track
+# being simulated, never from another one.
+#
+# Ross needs 2.012 m/s^2. 2022_april_pro_ccw needs 2.756. Running the april
+# track with the Ross constant made its own reference line physically
+# undrivable: every policy understeered off the surface at step 42, and the
+# whole design set reported DNF. The cause was not the reward functions.
+MAX_LATERAL_ACCEL = 2.01  # default, Ross. Override per track.
 
 
-def _yaw_rate_deg(speed: float, steer_deg: float) -> float:
+def lateral_accel_from_line(line) -> float:
+    """The grip the line itself demands, so the model matches the data."""
+    n = len(line)
+    worst = 0.0
+    for i in range(n):
+        p, q, r = line[(i - 1) % n], line[i], line[(i + 1) % n]
+        A = math.dist(p[:2], q[:2]); B = math.dist(q[:2], r[:2]); C = math.dist(p[:2], r[:2])
+        s2 = (A + B + C) / 2
+        area = max(1e-12, s2 * (s2 - A) * (s2 - B) * (s2 - C)) ** 0.5
+        if area < 1e-9:
+            continue
+        R = (A * B * C) / (4 * area)
+        if R < 50:
+            worst = max(worst, q[2] ** 2 / R)
+    return worst
+
+
+def _yaw_rate_deg(speed: float, steer_deg: float, a_max: float | None = None) -> float:
     """Heading change per second, limited by grip.
 
     The bicycle model wants v / L * tan(steer). Grip allows at most
@@ -66,7 +90,7 @@ def _yaw_rate_deg(speed: float, steer_deg: float) -> float:
     want = speed / WHEELBASE * math.tan(math.radians(steer_deg))
     if speed < 1e-6:
         return 0.0
-    limit = MAX_LATERAL_ACCEL / speed          # rad/s
+    limit = (a_max if a_max is not None else MAX_LATERAL_ACCEL) / speed  # rad/s
     return math.degrees(max(-limit, min(limit, want)))
 
 

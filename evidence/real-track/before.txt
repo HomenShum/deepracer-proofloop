@@ -1,0 +1,6 @@
+BEFORE — off-track measured from the RACING LINE, corridor +/-0.6 m
+  opt9 trained at 30x96 -> 17.400 s
+  chosen genome lateral_bias = +0.2850 m
+  driven path 40.614 m vs racing line 41.509 m  (-2.16 percent)
+  racing-line reference time 18.147 s -> the lap "beat" it by 0.75 s
+  the simulator had no track; it could not tell cutting from leaving the track
