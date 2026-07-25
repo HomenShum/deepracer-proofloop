@@ -1,19 +1,24 @@
+AFTER — off-track is point-in-polygon on the four wheels, per deepracer-simapp
 
-Real track: 2022_april_pro_ccw, width 1.067 m
-Racing-line reference time 23.362 s
-Off-track is now distance from the CENTRE line vs half width.
+source of truth: aws-deepracer-community/deepracer-simapp
+  bundle/markov/track_geom/track_data.py
+    self._road_poly_ = Polygon(self.outer_border.line, [self.inner_border.line])
+    return [self._road_poly_.contains(pnt) for pnt in points]
 
   design        mean      sd      best    DNF
-  -------- --------- ------- --------- ------
-  opt9       all DNF                      5/5
-  opt10      all DNF                      5/5
+  opt9       30.813s   6.672   22.533s    0/5
+  opt10      25.000s   0.000   25.000s    4/5
 
-  Any lap materially below 23.362s now needs an explanation,
-  because the racing line already uses the full track width.
+racing-line reference 23.362 s
 
-UNRESOLVED
-  0 of 75 grid policies complete the 2022_april_pro_ccw track.
-  Median death at step 41, max 63.
-  The reference racing line IS drivable (0 of 226 points off track).
-  So the track model is consistent; the pure-pursuit controller cannot drive it.
-  Cause not yet identified. The controller was tuned against the Ross line.
+BEFORE this change: 0 of 75 grid policies finished; every design reported DNF.
+AFTER: opt9 completes on all five seeds.
+
+UNCHANGED and still true
+  the racing line uses the full track width (66 of 226 points at the edge)
+  grip is per track (Ross 2.012, april 2.756 m/s^2)
+  all lap numbers from before the track fix remain invalid
+
+REMAINING
+  variance is high (sd 6.672). The power sweep already showed more inner
+  budget reduces it, so this is a known, costed fix rather than a mystery.

@@ -26,6 +26,7 @@ import math
 from pathlib import Path
 
 import numpy as np
+from shapely.geometry import Point, Polygon
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -63,6 +64,22 @@ class Track:
         self.margin = margin
         self.limit = self.half + self.margin
 
+        # THE AUTHORITATIVE OFF-TRACK TEST, from aws-deepracer-community/
+        # deepracer-simapp, bundle/markov/track_geom/track_data.py:
+        #
+        #     self._road_poly_ = Polygon(self.outer_border.line,
+        #                                [self.inner_border.line])
+        #     return [self._road_poly_.contains(pnt) for pnt in points]
+        #
+        # The track is a polygon with the inner border as a HOLE, and the check
+        # is point-in-polygon applied to the four WHEELS. distance_from_center
+        # is a value the reward function receives; it is NOT how AWS decides
+        # off-track.
+        #
+        # Terminating on a distance threshold is what made every policy DNF and
+        # what made a racing line that touches the edge look illegal.
+        self.road_poly = Polygon(self.outer, [self.inner])
+
     # -- geometry ---------------------------------------------------------
 
     def nearest_center_index(self, x: float, y: float, near: int | None = None,
@@ -91,9 +108,35 @@ class Track:
         proj = a + t * ab
         return float(math.dist((x, y), proj))
 
-    def is_offtrack(self, x: float, y: float, near: int | None = None) -> bool:
-        """True when the car has left the track surface."""
-        return self.distance_from_center(x, y, near) > self.limit
+    # Car footprint. The DeepRacer car is roughly 0.20 m long and 0.16 m wide.
+    CAR_HALF_LEN = 0.10
+    CAR_HALF_WID = 0.08
+
+    def wheels(self, x: float, y: float, heading_deg: float):
+        """The four wheel positions for a car at this pose."""
+        h = math.radians(heading_deg)
+        cs, sn = math.cos(h), math.sin(h)
+        out = []
+        for dx, dy in ((self.CAR_HALF_LEN, self.CAR_HALF_WID),
+                       (self.CAR_HALF_LEN, -self.CAR_HALF_WID),
+                       (-self.CAR_HALF_LEN, self.CAR_HALF_WID),
+                       (-self.CAR_HALF_LEN, -self.CAR_HALF_WID)):
+            out.append((x + dx * cs - dy * sn, y + dx * sn + dy * cs))
+        return out
+
+    def wheels_on_track(self, x: float, y: float, heading_deg: float) -> list[bool]:
+        return [self.road_poly.contains(Point(p)) for p in
+                self.wheels(x, y, heading_deg)]
+
+    def is_offtrack(self, x: float, y: float, heading_deg: float = 0.0) -> bool:
+        """AWS ends the episode when the car is off the road polygon.
+
+        Point-in-polygon on the wheels, not a distance threshold.
+        """
+        return not any(self.wheels_on_track(x, y, heading_deg))
+
+    def all_wheels_on_track(self, x: float, y: float, heading_deg: float = 0.0) -> bool:
+        return all(self.wheels_on_track(x, y, heading_deg))
 
     def is_left_of_center(self, x: float, y: float, near: int | None = None) -> bool:
         i = self.nearest_center_index(x, y, near)

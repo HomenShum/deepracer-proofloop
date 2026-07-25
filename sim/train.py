@@ -137,10 +137,11 @@ def rollout(line, actions, g, track_width=None):
         # does. Measuring from the racing line let the car drive in the grass.
         tk = _track()
         cte = tk.distance_from_center(x, y)
-        off = cte > tk.limit
+        off = tk.is_offtrack(x, y, heading)          # point-in-polygon, per AWS
+        all_on = tk.all_wheels_on_track(x, y, heading)
 
         trace.append({
-            "all_wheels_on_track": not off, "x": x, "y": y,
+            "all_wheels_on_track": all_on, "x": x, "y": y,
             "closest_waypoints": [idx, (idx + 1) % n],
             "distance_from_center": cte, "is_crashed": False,
             "is_left_of_center": tk.is_left_of_center(x, y), "is_offtrack": off, "is_reversed": False,
