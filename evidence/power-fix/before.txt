@@ -1,0 +1,12 @@
+BEFORE — variance at the original inner budget (8 iters x 32 pop), 7 seeds
+source: search/verify_head_to_head.py, committed 95a6ac0
+
+design                       mean     best    worst    stdev   DNF
+human opt9                 18.50s   17.53s   19.67s   0.651     1
+human opt10                18.60s   18.47s   18.80s   0.123     0
+agent param search A       18.80s   18.13s   20.13s   0.589     0
+agent LLM (GLM 5.2)        18.63s   17.47s   19.73s   0.795     0
+
+available headroom = 18.50 - 18.147 = 0.353s
+measurement sd     = 0.589 to 0.795
+=> the noise is roughly 2x the entire prize; no method is distinguishable

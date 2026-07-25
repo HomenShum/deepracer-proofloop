@@ -1,0 +1,41 @@
+{
+  "env": "deepracer",
+  "round": 4,
+  "artifact_sha256": "06ff516143143d2156e9719c4f69df768bcb9ae9527e279cbe325d7836e35df2",
+  "accepted": false,
+  "mechanism": null,
+  "gates": [
+    {
+      "name": "G0_allowlist",
+      "passed": true,
+      "reason": "allowlist clear"
+    },
+    {
+      "name": "G1_imports",
+      "passed": true,
+      "reason": "imports and runs"
+    },
+    {
+      "name": "G3_not_step_farmer",
+      "passed": true,
+      "reason": "rho(speed)=+1.000 rho(steps)=-1.000"
+    },
+    {
+      "name": "G2_finishes",
+      "passed": true,
+      "reason": "trained lap 18.47s"
+    }
+  ],
+  "seed_values": [
+    19.466666666666665,
+    20.6,
+    19.2,
+    20.266666666666666,
+    18.466666666666665
+  ],
+  "mean": 19.6,
+  "stdev": 0.76245218429311,
+  "baseline": 18.47,
+  "bound": 18.147,
+  "created_at": 1785011781.396643
+}
