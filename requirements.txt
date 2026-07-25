@@ -1,0 +1,3 @@
+deepracer-utils>=1.0.11   # TrackIO, Track(road_poly, borders); validates sim/track.py
+shapely>=1.8
+numpy>=1.24
